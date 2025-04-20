@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Memory Management Visualizer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="control-panel">
+            <h2>Configuration</h2>
+            <!-- Configuration inputs will go here -->
+        </div>
+        
+        <div class="visualization">
+            <canvas id="memoryCanvas"></canvas>
+            <div class="simulation-controls">
+                <button id="playBtn">Play</button>
+                <button id="pauseBtn">Pause</button>
+                <button id="stepBtn">Step</button>
+                <button id="resetBtn">Reset</button>
+            </div>
+        </div>
+        
+        <div class="stats-panel">
+            <h2>Statistics</h2>
+            <div id="statsDisplay"></div>
+            <div id="consoleLog"></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
