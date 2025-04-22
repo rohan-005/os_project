@@ -21,6 +21,7 @@ class BucketMemoryVisualizer {
         this.frameCountInput = document.getElementById('frameCount');
         this.referenceStringInput = document.getElementById('referenceString');
         this.algorithmSelect = document.getElementById('algorithm');
+        this.speedSelect = document.getElementById('speed');
         
         // State
         this.buckets = [];
@@ -33,6 +34,7 @@ class BucketMemoryVisualizer {
         this.referenceString = [];
         this.isRunning = false;
         this.simulationTimeout = null;
+        this.simulationSpeed = 1000; // Default speed (medium)
         
         // Initialize
         this.setupEventListeners();
@@ -46,6 +48,19 @@ class BucketMemoryVisualizer {
         this.clearLogBtn.addEventListener('click', () => this.clearLog());
         this.downloadLogBtn.addEventListener('click', () => this.downloadLogAsPDF());
         this.frameCountInput.addEventListener('change', () => this.createBuckets());
+        this.speedSelect.addEventListener('change', () => this.updateSpeed());
+    }
+    
+    updateSpeed() {
+        const speedValue = this.speedSelect.value;
+        switch(speedValue) {
+            case 'slow': this.simulationSpeed = 1500; break;
+            case 'medium': this.simulationSpeed = 1000; break;
+            case 'fast': this.simulationSpeed = 500; break;
+            case 'instant': this.simulationSpeed = 0; break;
+            default: this.simulationSpeed = 1000;
+        }
+        this.log(`Simulation speed set to ${speedValue}`, "info");
     }
     
     createBuckets() {
@@ -88,7 +103,7 @@ class BucketMemoryVisualizer {
         
         this.parseReferenceString();
         if (this.referenceString.length === 0) {
-            this.log('Error: Invalid reference string');
+            this.log('Error: Invalid reference string', 'error');
             return;
         }
         
@@ -99,8 +114,19 @@ class BucketMemoryVisualizer {
         this.updateStats();
         this.createBuckets(); // Reset buckets
         
-        this.log('Simulation started');
-        this.runSimulation();
+        this.log('Simulation started', 'info');
+        
+        if (this.simulationSpeed === 0) {
+            // Run instantly
+            while (this.currentStep < this.referenceString.length) {
+                this.stepSimulation();
+            }
+            this.isRunning = false;
+            this.currentActionDisplay.textContent = 'Completed';
+            this.log('Simulation completed', 'info');
+        } else {
+            this.runSimulation();
+        }
     }
     
     parseReferenceString() {
@@ -118,12 +144,14 @@ class BucketMemoryVisualizer {
         if (!this.isRunning || this.currentStep >= this.referenceString.length) {
             this.isRunning = false;
             this.currentActionDisplay.textContent = 'Completed';
-            this.log('Simulation completed');
+            this.log('Simulation completed', 'info');
             return;
         }
         
         this.stepSimulation();
-        this.simulationTimeout = setTimeout(() => this.runSimulation(), 800);
+        if (this.isRunning) {
+            this.simulationTimeout = setTimeout(() => this.runSimulation(), this.simulationSpeed);
+        }
     }
     
     stepSimulation() {
@@ -132,7 +160,7 @@ class BucketMemoryVisualizer {
         const ref = this.referenceString[this.currentStep];
         this.currentStepDisplay.textContent = this.currentStep + 1;
         this.currentRefDisplay.textContent = ref;
-        this.log(`Processing reference: ${ref}`);
+        this.log(`Processing reference: ${ref}`, 'info');
 
         // Highlight processing state
         this.currentActionDisplay.textContent = 'Processing...';
@@ -177,7 +205,7 @@ class BucketMemoryVisualizer {
         }
         
         this.currentActionDisplay.textContent = 'Hit';
-        this.log(`Hit: ${ref} found in Bucket ${bucketIndex}`);
+        this.log(`Hit: ${ref} found in Frame ${bucketIndex}`, 'success');
         
         // Remove highlights after delay
         setTimeout(() => {
@@ -208,7 +236,7 @@ class BucketMemoryVisualizer {
         this.pageTable[ref] = bucketIndex;
         
         this.currentActionDisplay.textContent = 'Page Fault';
-        this.log(`Fault: ${ref} added to Bucket ${bucketIndex}`);
+        this.log(`Fault: ${ref} added to Frame ${bucketIndex}`, 'warning');
         
         // Remove highlights after delay
         setTimeout(() => {
@@ -275,18 +303,15 @@ class BucketMemoryVisualizer {
             this.log("Error: PDF library not loaded. Please include jsPDF in your HTML.", "error");
             return;
         }
-    
+
         if (this.logOutput.children.length === 0) {
             this.log("No log entries to download", "warning");
             return;
         }
-    
+
         try {
-            // Access jsPDF through window.jspdf
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            
-            // Rest of your PDF generation code remains the same...
             const pageWidth = doc.internal.pageSize.width;
             
             // Add title
@@ -298,59 +323,60 @@ class BucketMemoryVisualizer {
             doc.setFontSize(12);
             doc.setTextColor(0, 0, 0);
             doc.text(`Algorithm: ${this.algorithmSelect.value}`, 20, 35);
-            doc.text(`Number of Buckets: ${this.frameCountInput.value}`, 20, 45);
+            doc.text(`Number of Frames: ${this.frameCountInput.value}`, 20, 45);
             doc.text(`Reference String: ${this.referenceStringInput.value}`, 20, 55);
+            doc.text(`Simulation Speed: ${this.speedSelect.options[this.speedSelect.selectedIndex].text}`, 20, 65);
             
             // Add current memory state visualization
             doc.setFontSize(14);
             doc.setTextColor(67, 97, 238);
-            doc.text('Memory Buckets State', pageWidth/2, 75, { align: 'center' });
+            doc.text('Memory Frames State', pageWidth/2, 85, { align: 'center' });
             
-            // Draw bucket visualization
-            const bucketWidth = 50;
-            const startX = (pageWidth - (this.buckets.length * bucketWidth + (this.buckets.length-1)*10))/2;
+            // Draw frame visualization
+            const frameWidth = 50;
+            const startX = (pageWidth - (this.buckets.length * frameWidth + (this.buckets.length-1)*10))/2;
             
             doc.setDrawColor(67, 97, 238);
             doc.setLineWidth(0.5);
             
-            // Draw buckets
+            // Draw frames
             for (let i = 0; i < this.buckets.length; i++) {
-                const x = startX + i*(bucketWidth+10);
+                const x = startX + i*(frameWidth+10);
                 
-                // Bucket border
-                doc.rect(x, 85, bucketWidth, 30);
+                // Frame border
+                doc.rect(x, 95, frameWidth, 30);
                 
-                // Bucket label
+                // Frame label
                 doc.setFontSize(12);
-                doc.text(`Frame ${i}`, x + bucketWidth/2, 82, { align: 'center' });
+                doc.text(`Frame ${i}`, x + frameWidth/2, 92, { align: 'center' });
                 
-                // Bucket content
+                // Frame content
                 const content = this.buckets[i].pages[0] || 'Free';
                 doc.setFontSize(14);
-                doc.text(content.toString(), x + bucketWidth/2, 100, { align: 'center' });
+                doc.text(content.toString(), x + frameWidth/2, 110, { align: 'center' });
             }
             
             // Add current status
             doc.setFontSize(14);
             doc.setTextColor(67, 97, 238);
-            doc.text('Current Status', 20, 130);
+            doc.text('Current Status', 20, 140);
             
             doc.setFontSize(12);
             doc.setTextColor(0, 0, 0);
-            doc.text(`Step: ${this.currentStepDisplay.textContent}`, 20, 140);
-            doc.text(`Processing: ${this.currentRefDisplay.textContent}`, 20, 150);
-            doc.text(`Action: ${this.currentActionDisplay.textContent}`, 20, 160);
+            doc.text(`Step: ${this.currentStepDisplay.textContent}`, 20, 150);
+            doc.text(`Processing: ${this.currentRefDisplay.textContent}`, 20, 160);
+            doc.text(`Action: ${this.currentActionDisplay.textContent}`, 20, 170);
             
             // Add statistics
             doc.setFontSize(14);
             doc.setTextColor(67, 97, 238);
-            doc.text('Statistics', 20, 180);
+            doc.text('Statistics', 20, 190);
             
             doc.setFontSize(12);
             doc.setTextColor(0, 0, 0);
-            doc.text(`Page Faults: ${this.stats.faults}`, 20, 190);
-            doc.text(`Hits: ${this.stats.hits}`, 20, 200);
-            doc.text(`Hit Ratio: ${this.hitRatioDisplay.textContent}`, 20, 210);
+            doc.text(`Page Faults: ${this.stats.faults}`, 20, 200);
+            doc.text(`Hits: ${this.stats.hits}`, 20, 210);
+            doc.text(`Hit Ratio: ${this.hitRatioDisplay.textContent}`, 20, 220);
             
             // Add event log
             doc.addPage();
@@ -370,12 +396,14 @@ class BucketMemoryVisualizer {
                 
                 // Color code based on entry type
                 const entry = entries[i];
-                if (entry.textContent.includes('Hit:')) {
-                    doc.setTextColor(0, 128, 0); // Green for hits
-                } else if (entry.textContent.includes('Fault:')) {
-                    doc.setTextColor(200, 0, 0); // Red for faults
+                if (entry.className.includes('log-success')) {
+                    doc.setTextColor(0, 128, 0); // Green for success
+                } else if (entry.className.includes('log-warning')) {
+                    doc.setTextColor(255, 165, 0); // Orange for warnings
+                } else if (entry.className.includes('log-error')) {
+                    doc.setTextColor(200, 0, 0); // Red for errors
                 } else {
-                    doc.setTextColor(0, 0, 0); // Black for others
+                    doc.setTextColor(0, 0, 0); // Black for info
                 }
                 
                 doc.text(entry.textContent, 20, y);

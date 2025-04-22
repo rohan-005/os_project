@@ -31,6 +31,15 @@
                     <option value="FIFO">FIFO</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label for="speed">Simulation Speed:</label>
+                <select id="speed">
+                    <option value="slow">Slow</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="fast">Fast</option>
+                    <option value="instant">Instant</option>
+                </select>
+            </div>
             
             <div class="btn-group">
                 <button id="startBtn" class="btn"><i class="fas fa-play"></i> Start</button>
@@ -70,6 +79,7 @@
                 <button id="downloadLog" class="btn"><i class="fas fa-file-pdf"></i> Download PDF</button>
             </div>
         </div>
+        
     </div>
     <script src="script.js"></script>
 </body>
