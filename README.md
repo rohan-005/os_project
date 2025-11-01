@@ -24,14 +24,3 @@
 
 https://rohan-005.github.io/os_project/
 
-## 📷 Preview
-
-> _(Include a screenshot or GIF here of the simulation interface)_
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- A modern browser (Chrome, Firefox, Edge, etc.)
-- No backend or server required – runs completely on the frontend.
-
