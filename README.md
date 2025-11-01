@@ -15,7 +15,6 @@
 - Interactive GUI with statistics:
   - Page Faults
   - Page Hits
-  - Hit Ratio
 - Live event log of all actions.
 - Downloadable simulation report in **PDF** format.
 - Adjustable simulation speed.
